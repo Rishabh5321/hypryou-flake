@@ -23,20 +23,6 @@ A Nix flake for [HyprYou](https://github.com/koeqaife/hyprland-material-you), a 
   ```
 - **Wayland support**: Ensure your system supports Wayland
 
-## Quick Start
-
-### Try it out (no installation)
-
-```bash
-nix run github:rishabh5321/hypryou-flake
-```
-
-### One-line installation
-
-```bash
-nix profile install github:rishabh5321/hypryou-flake
-```
-
 ## Installation Methods
 
 ### 1. NixOS System Configuration
