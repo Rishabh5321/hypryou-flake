@@ -2,31 +2,52 @@
 
 A Nix flake for [HyprYou](https://github.com/koeqaife/hyprland-material-you), a Material You themed Hyprland desktop environment.
 
+## Features
+
+- **Material You Design**: Modern, adaptive interface following Google's Material You principles
+- **Hyprland Integration**: Built specifically for the Hyprland Wayland compositor
+- **Easy Installation**: Multiple installation methods via Nix flakes
+- **Modular Dependencies**: Optional components that enhance functionality
+- **NixOS & Home Manager Support**: First-class integration with both systems
+
+## Prerequisites
+
+- **Nix with flakes enabled**
+- **Hyprland**: Install separately via your preferred method:
+  ```bash
+  # Via nixpkgs
+  nix profile install nixpkgs#hyprland
+
+  # Or add to your system configuration
+  programs.hyprland.enable = true;
+  ```
+- **Wayland support**: Ensure your system supports Wayland
+
 ## Quick Start
 
-### Using with `nix run`
+### Try it out (no installation)
 
 ```bash
-# Run directly from GitHub
-nix run github:yourusername/hypryou-flake
-
-# Or clone and run locally
-git clone https://github.com/yourusername/hypryou-flake.git
-cd hypryou-flake
-nix run .
+nix run github:rishabh5321/hypryou-flake
 ```
 
-### Using in your Nix configuration
+### One-line installation
 
-#### With NixOS
+```bash
+nix profile install github:rishabh5321/hypryou-flake
+```
 
-Add to your `flake.nix` inputs:
+## Installation Methods
+
+### 1. NixOS System Configuration
+
+Add to your `flake.nix`:
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    hypryou.url = "github:yourusername/hypryou-flake";
+    hypryou.url = "github:rishabh5321/hypryou-flake";
   };
 
   outputs = { self, nixpkgs, hypryou, ... }: {
@@ -35,10 +56,17 @@ Add to your `flake.nix` inputs:
       modules = [
         hypryou.nixosModules.default
         {
+          # Enable HyprYou
           services.hypryou.enable = true;
-          # Optional: add extra packages
+
+          # Enable Hyprland (required)
+          programs.hyprland.enable = true;
+
+          # Optional: Add extra packages to HyprYou environment
           services.hypryou.extraPackages = with pkgs; [
-            # Add any additional packages you want available in HyprYou
+            firefox
+            vscode
+            # Add your preferred applications
           ];
         }
       ];
@@ -47,14 +75,14 @@ Add to your `flake.nix` inputs:
 }
 ```
 
-#### With Home Manager
+### 2. Home Manager
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
-    hypryou.url = "github:yourusername/hypryou-flake";
+    hypryou.url = "github:rishabh5321/hypryou-flake";
   };
 
   outputs = { self, nixpkgs, home-manager, hypryou, ... }: {
@@ -64,6 +92,11 @@ Add to your `flake.nix` inputs:
         hypryou.homeManagerModules.default
         {
           programs.hypryou.enable = true;
+
+          # Make sure Hyprland is available
+          home.packages = with pkgs; [
+            hyprland
+          ];
         }
       ];
     };
@@ -71,16 +104,21 @@ Add to your `flake.nix` inputs:
 }
 ```
 
-#### Manual Installation
+### 3. Direct Package Installation
 
-Add to your system packages:
+Add to your system/home configuration:
 
 ```nix
 {
-  inputs.hypryou.url = "github:yourusername/hypryou-flake";
+  inputs.hypryou.url = "github:rishabh5321/hypryou-flake";
 
-  # In your configuration.nix or home.nix
+  # In configuration.nix
   environment.systemPackages = [
+    inputs.hypryou.packages.${system}.default
+  ];
+
+  # Or in home.nix
+  home.packages = [
     inputs.hypryou.packages.${system}.default
   ];
 }
@@ -88,78 +126,137 @@ Add to your system packages:
 
 ## Usage
 
-1. **Start HyprYou**: After installation, you should see "HyprYou" as an option in your display manager
-2. **Launch from terminal**: Run `hypryou-start` to start the desktop environment
-3. **Configuration**: HyprYou configuration files will be located in your home directory
+### Starting HyprYou
 
-## Dependencies
+1. **From Display Manager**: Look for "HyprYou" in your display manager (GDM, SDDM, etc.)
+2. **From Terminal**: Run `hypryou-start`
+3. **Direct Launch**: Run `hypryou` command
 
-The flake automatically handles all dependencies including:
+⚠️ **Important**: Select "HyprYou" from your display manager, not "Hyprland". HyprYou provides its own configured Hyprland session.
 
-- Hyprland
-- Python 3 with required packages
-- GTK4
-- Various system utilities
+### Configuration
 
-Optional dependencies (set to null by default, can be overridden):
-- `hyprsunset` - For sunset/sunrise lighting
-- `cliphist` - For clipboard history
+HyprYou will create configuration files in:
+- `~/.config/hypryou/` - Main configuration
+- `~/.config/hypr/` - Hyprland configuration (managed by HyprYou)
 
-## Customization
+### Key Bindings
 
-### Override Dependencies
+HyprYou comes with pre-configured keybindings. Check the configuration files or run `hypryou --help` for details.
+
+## Optional Dependencies
+
+These packages enhance HyprYou's functionality but aren't required:
+
+- **hyprsunset**: Automatic blue light filtering
+- **cliphist**: Clipboard history manager
+
+Enable them by overriding the package:
 
 ```nix
-# In your flake.nix
 let
-  hypryou-custom = hypryou.packages.${system}.default.override {
+  hypryou-full = inputs.hypryou.packages.${system}.default.override {
     hyprsunset = pkgs.hyprsunset;
     cliphist = pkgs.cliphist;
   };
-in
-{
-  environment.systemPackages = [ hypryou-custom ];
+in {
+  environment.systemPackages = [ hypryou-full ];
 }
 ```
 
-### Development
+## Development
 
-To work on HyprYou development:
+### Development Shell
 
 ```bash
-git clone https://github.com/yourusername/hypryou-flake.git
+git clone https://github.com/rishabh5321/hypryou-flake.git
 cd hypryou-flake
 nix develop
 ```
 
-This provides a development shell with all necessary build dependencies.
+This provides all build dependencies for developing HyprYou.
+
+### Building Locally
+
+```bash
+# Build the package
+nix build .#default
+
+# Test run
+nix run .#default
+```
+
+### Contributing
+
+1. Fork this repository
+2. Create your feature branch
+3. Make changes and test with `nix build`
+4. Ensure it works with `nix run .#default`
+5. Submit a pull request
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Display Manager**: Make sure you're selecting "HyprYou" from your display manager, not "Hyprland"
-2. **Permissions**: Ensure your user is in necessary groups for graphics and input devices
-3. **Wayland**: Make sure your system supports Wayland
+**"HyprYou not appearing in display manager"**
+- Ensure the package is installed system-wide, not just in user profile
+- Check `/run/current-system/sw/share/wayland-sessions/` for `hypryou.desktop`
 
-### Logs
+**"Command not found: hypryou"**
+- Make sure the package is in your PATH
+- Try `nix profile install github:rishabh5321/hypryou-flake`
 
-Check logs with:
+**"Hyprland not starting"**
+- Ensure Hyprland is installed separately
+- Check GPU drivers support Wayland
+- Verify user is in `video` group: `groups $USER`
+
+**"Black screen or crashes"**
+- Check logs: `journalctl -u display-manager`
+- Try starting from terminal: `hypryou-start`
+- Ensure all dependencies are available
+
+### Debug Mode
+
+Run with debug output:
 ```bash
-journalctl -u display-manager
-# or
-journalctl --user -u hypryou
+HYPRYOU_DEBUG=1 hypryou-start
 ```
 
-## Contributing
+### Getting Help
 
-1. Fork this repository
-2. Make your changes
-3. Test with `nix build` and `nix run`
-4. Submit a pull request
+- Check logs: `journalctl --user -u hypryou`
+- Original project issues: [HyprYou GitHub Issues](https://github.com/koeqaife/hyprland-material-you/issues)
+- Nix-specific issues: Create an issue in this repository
+
+## System Requirements
+
+- **OS**: Linux (NixOS recommended)
+- **Display**: Wayland-compatible GPU drivers
+- **Memory**: 4GB+ RAM recommended
+- **Storage**: ~2GB for full installation
+
+## Architecture Support
+
+Currently tested on:
+- x86_64-linux ✅
+- aarch64-linux ⚠️ (may work, untested)
 
 ## License
 
-This flake packaging is released under the same license as HyprYou (GPL-3.0+).
+This flake packaging is released under GPL-3.0+, same as the original HyprYou project.
 
-Original project: https://github.com/koeqaife/hyprland-material-you
+- **HyprYou**: [GPL-3.0+](https://github.com/koeqaife/hyprland-material-you/blob/main/LICENSE)
+- **This flake**: GPL-3.0+
+
+## Related Projects
+
+- [HyprYou](https://github.com/koeqaife/hyprland-material-you) - Original project
+- [Hyprland](https://github.com/hyprwm/Hyprland) - Wayland compositor
+- [Material You](https://m3.material.io/) - Design system
+
+## Acknowledgments
+
+- [@koeqaife](https://github.com/koeqaife) - Original HyprYou creator
+- [Hyprland team](https://github.com/hyprwm/Hyprland) - Amazing Wayland compositor
+- NixOS community - For the excellent packaging ecosystem

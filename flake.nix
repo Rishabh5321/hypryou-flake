@@ -4,19 +4,22 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    hyprland.url = "github:hyprwm/Hyprland";
   };
 
-  outputs = { self, nixpkgs, flake-utils, hyprland }:
+  outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
         hypryou = pkgs.callPackage ./default.nix {
-          hyprland = hyprland.packages.${system}.hyprland;
-          # Optional dependencies - users can override these
-          hyprsunset = null; # Set to pkgs.hyprsunset if available
-          cliphist = null; # Set to pkgs.cliphist if available
+          # Use hyprland from nixpkgs if available
+          hyprland = pkgs.hyprland or null;
+          # Pass optional dependencies, they'll be null if not available
+          xdg-desktop-portal-hyprland = pkgs.xdg-desktop-portal-hyprland or null;
+          xdg-dbus-proxy = pkgs.xdg-dbus-proxy or null;
+          greetd = pkgs.greetd or null;
+          hyprsunset = pkgs.hyprsunset or null;
+          cliphist = pkgs.cliphist or null;
         };
 
       in

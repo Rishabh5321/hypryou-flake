@@ -14,10 +14,10 @@
 , xdg-utils
 , xdg-desktop-portal
 , xdg-desktop-portal-gtk
-, xdg-desktop-portal-hyprland
-, xdg-dbus-proxy
-, greetd
-, hyprland
+, xdg-desktop-portal-hyprland ? null
+, xdg-dbus-proxy ? null
+, greetd ? null
+, hyprland ? null
 , hyprsunset ? null
 , cliphist ? null
 , pkg-config
@@ -55,24 +55,34 @@ stdenv.mkDerivation rec {
     gobject-introspection
   ];
 
-  buildInputs = [
-    gtk4
-    cairo
-    dbus
-    dbus-glib
-    networkmanager
-    upower
-    polkit
-    pythonEnv
-    hyprland
-    xdg-utils
-    xdg-desktop-portal
-    xdg-desktop-portal-gtk
-    xdg-desktop-portal-hyprland
-    xdg-dbus-proxy
-    greetd
-  ] ++ lib.optionals (hyprsunset != null) [ hyprsunset ]
-  ++ lib.optionals (cliphist != null) [ cliphist ];
+  buildInputs =
+    let
+      # Define base dependencies that should always be available
+      baseDeps = [
+        gtk4
+        cairo
+        dbus
+        dbus-glib
+        networkmanager
+        upower
+        polkit
+        pythonEnv
+        xdg-utils
+        xdg-desktop-portal
+        xdg-desktop-portal-gtk
+      ];
+
+      # Optional dependencies - only include if they're valid derivations
+      optionalDeps = lib.filter (dep: dep != null && lib.isDerivation dep) [
+        hyprland
+        xdg-desktop-portal-hyprland
+        xdg-dbus-proxy
+        greetd
+        hyprsunset
+        cliphist
+      ];
+    in
+    baseDeps ++ optionalDeps;
 
   postPatch = ''
     # Make build scripts executable
@@ -193,15 +203,16 @@ stdenv.mkDerivation rec {
       if [ -x "$bin" ]; then
         wrapProgram "$bin" \
           --prefix PYTHONPATH : "$out/lib/hypryou:${pythonEnv}/${pythonEnv.sitePackages}" \
-          --prefix PATH : "${lib.makeBinPath ([
-            hyprland
+          --prefix PATH : "${lib.makeBinPath (lib.filter (dep: dep != null && lib.isDerivation dep) [
             xdg-utils
             dart-sass
             networkmanager
             upower
             python3
-          ] ++ lib.optionals (hyprsunset != null) [ hyprsunset ]
-            ++ lib.optionals (cliphist != null) [ cliphist ])}" \
+            hyprland
+            hyprsunset
+            cliphist
+          ])}" \
           --set GI_TYPELIB_PATH "${lib.makeSearchPath "lib/girepository-1.0" [
             gtk4
             gobject-introspection
